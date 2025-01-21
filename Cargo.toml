@@ -1,6 +1,8 @@
 [package]
 name = "mockdown"
 version = "0.0.0"
+description = "A macro free mock library"
 edition = "2021"
+license = "MIT"
 
 [dependencies]
