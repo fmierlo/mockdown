@@ -7,29 +7,22 @@ Mockdown is a single file and macro/dependency free mock library for Rust.
 ## mod sys
 
 ```rust
-use libc::c_ulong;
-
-#[cfg(not(test))]
-use libc::{c_int, c_void};
+use libc::{c_int, c_ulong, c_void};
 
 pub const SIOCGIFLLADDR: c_ulong = 0xc020699e;
 
-#[cfg(not(test))]
 pub fn socket(domain: c_int, ty: c_int, protocol: c_int) -> c_int {
     unsafe { libc::socket(domain, ty, protocol) }
 }
 
-#[cfg(not(test))]
 pub fn ioctl(fd: c_int, request: c_ulong, arg: *mut c_void) -> c_int {
     unsafe { libc::ioctl(fd, request, arg) }
 }
 
-#[cfg(not(test))]
 pub fn close(fd: c_int) -> c_int {
     unsafe { libc::close(fd) }
 }
 
-#[cfg(not(test))]
 pub fn errno() -> c_int {
     unsafe { *libc::__error() }
 }
@@ -147,7 +140,7 @@ mod tests {
             })
             .expect(|sys::IoCtl(args, ifreq)| {
                 let ifreq = ifreq::from_mut_ptr(ifreq);
-                assert_eq!((MOCK_FD, super::sys::SIOCGIFLLADDR), args);
+                assert_eq!((MOCK_FD, sys::SIOCGIFLLADDR), args);
                 assert_eq!(ifreq::get_name(ifreq), *IFNAME);
                 ifreq::set_lladdr(ifreq, &LLADDR);
                 0
@@ -177,7 +170,7 @@ mod tests {
             })
             .expect(|sys::IoCtl(args, ifreq)| {
                 let ifreq = ifreq::from_mut_ptr(ifreq);
-                assert_eq!((MOCK_FD, super::sys::SIOCGIFLLADDR), args);
+                assert_eq!((MOCK_FD, sys::SIOCGIFLLADDR), args);
                 assert_eq!(ifreq::get_name(ifreq), *IFNAME);
                 -1
             })
