@@ -1,7 +1,7 @@
 [package]
 name = "mockdown"
 version = "0.2.0"
-description = "Mockdown is a single file and macro/dependency free mock library"
+description = "Mockdown is a single file and macro/dependency free mock library for Rust"
 keywords = ["mock", "mocking", "test", "testing", "mockdown"]
 homepage = "https://github.com/fmierlo/mockdown"
 repository = "https://github.com/fmierlo/mockdown"
