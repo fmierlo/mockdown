@@ -1,6 +1,6 @@
 # Mockdown
 
-Mockdown is a single file and macro free mock library.
+Mockdown is a single file and macro/dependency free mock library.
 
 # Example
 

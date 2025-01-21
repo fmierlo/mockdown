@@ -1,7 +1,10 @@
 [package]
 name = "mockdown"
 version = "0.1.0"
-description = "Mockdown is a single file and macro free mock library"
+description = "Mockdown is a single file and macro/dependency free mock library"
+keywords = ["mock", "mocking", "test", "testing", "mockdown"]
+homepage = "https://github.com/fmierlo/mockdown"
+repository = "https://github.com/fmierlo/mockdown"
 edition = "2021"
 license = "MIT"
 
