@@ -10,11 +10,11 @@ use std::fmt::Debug;
 use std::sync::{Arc, LazyLock, Mutex};
 use std::thread::LocalKey;
 
-mod expect {
+pub mod expect {
     use std::any::Any;
     use std::fmt::Debug;
 
-    trait AsAny {
+    pub trait AsAny {
         fn as_any(self) -> Box<dyn Any>;
     }
 
@@ -24,7 +24,7 @@ mod expect {
         }
     }
 
-    trait AsType {
+    pub trait AsType {
         fn as_type<T: Any>(self, expect: &dyn Expect) -> Result<T, &'static str>;
     }
 
@@ -36,7 +36,7 @@ mod expect {
         }
     }
 
-    pub(super) trait Expect: Send {
+    pub trait Expect: Send {
         fn on_mock(&self, when: Box<dyn Any>) -> Result<Box<dyn Any>, &'static str>;
         fn type_name(&self) -> &'static str;
     }
@@ -48,7 +48,7 @@ mod expect {
     }
 
     impl dyn Expect {
-        pub(super) fn mock<T: Any, U: Any>(&self, when: T) -> Result<U, &'static str> {
+        pub fn mock<T: Any, U: Any>(&self, when: T) -> Result<U, &'static str> {
             let then = self.on_mock(when.as_any())?;
             Ok(then.as_type(self)?)
         }
@@ -71,19 +71,19 @@ mod expect {
     }
 
     impl ExpectList {
-        pub(super) fn clear(&mut self) {
+        pub fn clear(&mut self) {
             self.list.clear();
         }
 
-        pub(super) fn add<T: Any, U: Any>(&mut self, expect: fn(T) -> U) {
+        pub fn add<T: Any, U: Any>(&mut self, expect: fn(T) -> U) {
             self.list.insert(0, Box::new(expect));
         }
 
-        pub(super) fn next(&mut self) -> Option<Box<dyn Expect>> {
+        pub fn next(&mut self) -> Option<Box<dyn Expect>> {
             self.list.pop()
         }
 
-        fn is_empty(&self) -> bool {
+        pub fn is_empty(&self) -> bool {
             self.list.is_empty()
         }
     }
@@ -119,20 +119,20 @@ impl Mockdown {
         Arc::clone(mockdown)
     }
 
-    fn clear(&mut self) {
+    pub fn clear(&mut self) {
         self.expects.clear();
     }
 
-    fn add<T: Any, U: Any>(&mut self, expect: fn(T) -> U) {
+    pub fn add<T: Any, U: Any>(&mut self, expect: fn(T) -> U) {
         self.expects.add(expect);
     }
 
-    fn type_error<T: Any + Debug, U: Any>(expect: &str) -> String {
+    pub fn type_error<T: Any + Debug, U: Any>(expect: &str) -> String {
         let received = type_name::<fn(T) -> U>();
         format!("Mockdown error, expect type mismatch: expecting {expect:?}, received {received:?}")
     }
 
-    fn mock<T: Any + Debug, U: Any>(&mut self, args: T) -> Result<U, Box<dyn Error>> {
+    pub fn mock<T: Any + Debug, U: Any>(&mut self, args: T) -> Result<U, Box<dyn Error>> {
         let expect = self.expects.next().ok_or_else(|| {
             self.expects.clear();
             Self::type_error::<T, U>("nothing")
