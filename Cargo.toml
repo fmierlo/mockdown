@@ -1,6 +1,6 @@
 [package]
 name = "mockdown"
-version = "0.1.0"
+version = "0.2.0"
 description = "Mockdown is a single file and macro/dependency free mock library"
 keywords = ["mock", "mocking", "test", "testing", "mockdown"]
 homepage = "https://github.com/fmierlo/mockdown"
