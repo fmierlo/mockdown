@@ -9,62 +9,53 @@ Mockdown is a single file and macro/dependency free mock library for Rust.
 ```rust
 #[cfg(not(test))]
 mod math {
-   pub fn add(x: i32, y: i32) -> i32 {
-       x + y
-   }
+    pub fn add(x: i32, y: i32) -> i32 {
+        x + y
+    }
 }
 
 mod lib {
-   #[cfg(not(test))]
-   use super::math;
+    #[cfg(not(test))]
+    use super::math;
 
-   #[cfg(test)]
-   use mocks::math;
+    #[cfg(test)]
+    use mocks::math;
 
-   fn add(x: i32, y: i32) -> i32 {
-       math::add(x, y)
-   }
+    fn add(x: i32, y: i32) -> i32 {
+        math::add(x, y)
+    }
 
-   #[cfg(test)]
-   mod mocks {
-       pub mod math {
-           use mockdown::{Mockdown, Static};
-           use std::{cell::RefCell, thread::LocalKey};
+    #[cfg(test)]
+    mod mocks {
+        pub mod math {
+            use mockdown::{mockdown, Static};
 
-           thread_local! {
-               static MOCKDOWN: RefCell<Mockdown> = Mockdown::thread_local();
-           }
+            #[derive(Debug, PartialEq)]
+            pub struct Add(pub i32, pub i32);
 
-           pub fn mockdown() -> &'static LocalKey<RefCell<Mockdown>> {
-               &MOCKDOWN
-           }
+            pub fn add(x: i32, y: i32) -> i32 {
+                let args = Add(x, y);
+                mockdown().mock(args).unwrap()
+            }
+        }
+    }
 
-           #[derive(Debug, PartialEq)]
-           pub struct Add(pub i32, pub i32);
+    #[cfg(test)]
+    mod tests {
+        use super::math;
+        use mockdown::{mockdown, Static};
 
-           pub fn add(x: i32, y: i32) -> i32 {
-               let args = Add(x, y);
-               MOCKDOWN.mock(args).unwrap()
-           }
-       }
-   }
+        #[test]
+        fn test_add() {
+            mockdown().expect(|args| {
+                assert_eq!(math::Add(1, 1), args);
+                2
+            });
 
-   #[cfg(test)]
-   mod tests {
-       use super::math;
-       use mockdown::Static;
-
-       #[test]
-       fn test_add() {
-           math::mockdown().expect(|args| {
-               assert_eq!(math::Add(1, 1), args);
-               2
-           });
-
-           let z = super::add(1, 1);
-           assert_eq!(z, 2);
-       }
-   }
+            let z = super::add(1, 1);
+            assert_eq!(z, 2);
+        }
+    }
 }
 ```
 ## Libc

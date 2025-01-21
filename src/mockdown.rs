@@ -97,6 +97,14 @@ pub mod expect {
     }
 }
 
+thread_local! {
+    static MOCKDOWN: RefCell<Mockdown> = Mockdown::thread_local();
+}
+
+pub fn mockdown() -> &'static LocalKey<RefCell<Mockdown>> {
+    &MOCKDOWN
+}
+
 #[derive(Default)]
 pub struct Mockdown {
     expects: ExpectList,
