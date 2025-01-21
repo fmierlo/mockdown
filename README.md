@@ -1,4 +1,4 @@
-# Mockdown &emsp; [![Latest Version]][crates.io] ![msrv] [![docs.rs]][docs.rs/mockdown] ![][build]
+# Mockdown &emsp; [![latest]][crates.io] [![msrv]][crates.io] [![docs.rs]][docs.rs/mockdown] ![][build]
 
 Mockdown is a single file and macro/dependency free mock library for Rust.
 
@@ -255,7 +255,7 @@ mod tests {
 }
 ```
 
-[Latest Version]: https://img.shields.io/crates/v/mockdown.svg
+[latest]: https://img.shields.io/crates/v/mockdown.svg
 [crates.io]: https://crates.io/crates/mockdown
 [msrv]: https://img.shields.io/crates/msrv/mockdown
 [docs.rs]: https://img.shields.io/docsrs/mockdown?label=docs.rs
