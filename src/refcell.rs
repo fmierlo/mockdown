@@ -5,6 +5,10 @@ use std::fmt::Debug;
 
 use crate::{Mock, Mockdown};
 
+pub fn new() -> RefCell<Mockdown> {
+    Default::default()
+}
+
 impl Mock for RefCell<Mockdown> {
     fn clear(&'static self) -> &'static Self {
         self.borrow_mut().clear();
