@@ -100,7 +100,7 @@ pub mod expect {
     }
 
     pub trait Expect: Send {
-        fn on_mock(&self, when: Box<dyn Any>) -> Result<Box<dyn Any>, &'static str>;
+        fn call_mock(&self, when: Box<dyn Any>) -> Result<Box<dyn Any>, &'static str>;
         fn type_name(&self) -> &'static str;
     }
 
@@ -112,13 +112,13 @@ pub mod expect {
 
     impl dyn Expect {
         pub fn mock<T: Any, U: Any>(&self, when: T) -> Result<U, &'static str> {
-            let then = self.on_mock(when.into_any())?;
+            let then = self.call_mock(when.into_any())?;
             then.into_type(self)
         }
     }
 
     impl<T: Any, U: Any> Expect for fn(T) -> U {
-        fn on_mock(&self, when: Box<dyn Any>) -> Result<Box<dyn Any>, &'static str> {
+        fn call_mock(&self, when: Box<dyn Any>) -> Result<Box<dyn Any>, &'static str> {
             let then = self(when.into_type(self)?);
             Ok(then.into_any())
         }
