@@ -133,14 +133,6 @@ pub mod expect {
         list: Vec<Box<dyn Expect>>,
     }
 
-    impl std::iter::Iterator for ExpectList {
-        type Item = Box<dyn Expect>;
-
-        fn next(&mut self) -> Option<Self::Item> {
-            self.list.pop()
-        }
-    }
-
     impl ExpectList {
         pub fn clear(&mut self) {
             self.list.clear();
@@ -148,6 +140,11 @@ pub mod expect {
 
         pub fn add<T: Any, U: Any>(&mut self, expect: fn(T) -> U) {
             self.list.insert(0, Box::new(expect));
+        }
+
+        #[allow(clippy::should_implement_trait)]
+        pub fn next(&mut self) -> Option<Box<dyn Expect>> {
+            self.list.pop()
         }
 
         pub fn is_empty(&self) -> bool {
