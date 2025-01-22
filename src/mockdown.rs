@@ -67,7 +67,7 @@ impl Mockdown {
         Ok(result)
     }
 
-    pub fn type_error<T: Any + Debug, U: Any>(expect: &str) -> String {
+    fn type_error<T: Any + Debug, U: Any>(expect: &str) -> String {
         let received = type_name::<fn(T) -> U>();
         format!("Mockdown error, expect type mismatch: expecting {expect:?}, received {received:?}")
     }
