@@ -39,7 +39,7 @@
 //!     #[cfg(test)]
 //!     pub mod tests {
 //!         use mockdown::{mockdown, Mock};
-//!         use super::math;
+//!         use super::mocks::math;
 //!
 //!         #[test]
 //!         # pub fn hidden() {}
