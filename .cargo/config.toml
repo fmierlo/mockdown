@@ -1,0 +1,5 @@
+[build]
+rustdocflags = ["--cfg", "test", "--test-args", "--show-output"]
+
+[term]
+verbose = true
