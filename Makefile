@@ -1,16 +1,31 @@
 
-.PHONY: build check test doc
+.PHONY: run clean check dev-deps test test~% report
+
+TARPAULIN_FLAGS := --output-dir target/tarpaulin --out Stdout --out Html
 
 build: check
 	cargo doc
 	cargo build
 
+clean:
+	cargo clean
+
 check:
+	cargo check --all-targets
+	cargo fmt --all --check
 	cargo clippy
-	cargo fmt --check
+
+dev-deps:
+	cargo install cargo-tarpaulin
 
 test: check
-	RUSTDOCFLAGS="--cfg test" cargo test --doc -v -- --show-output
+	cargo tarpaulin $(TARPAULIN_FLAGS)
 
-doc: build
-	open target/doc/mockdown/index.html
+test~%:
+	cargo tarpaulin $(TARPAULIN_FLAGS) -- $(*)
+
+report: test
+	open target/tarpaulin/tarpaulin-report.html
+
+open: build
+	cargo doc --open
