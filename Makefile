@@ -3,7 +3,7 @@
 
 TARPAULIN_FLAGS := --output-dir target/tarpaulin --out Stdout --out Html
 
-build: check
+build: test
 	cargo doc
 	cargo build
 
@@ -19,6 +19,7 @@ dev-deps:
 	cargo install cargo-tarpaulin
 
 test: check
+	cargo test
 	cargo tarpaulin $(TARPAULIN_FLAGS)
 
 test~%:
