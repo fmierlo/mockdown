@@ -26,12 +26,10 @@
 //!         pub mod math {
 //!             use mockdown::{mockdown, Mock};
 //!
-//!             #[derive(Debug, PartialEq)]
-//!             pub struct Add(pub i32, pub i32);
+//!             pub struct Add(pub fn (x: i32, y: i32) -> i32);
 //!
 //!             pub fn add(x: i32, y: i32) -> i32 {
-//!                 let args = Add(x, y);
-//!                 mockdown().mock(args).unwrap()
+//!                 mockdown().next(|Add(mock)| mock(x, y)).unwrap()
 //!             }
 //!         }
 //!     }
@@ -44,10 +42,10 @@
 //!         #[test]
 //!         # pub fn hidden() {}
 //!         pub fn test_one() {
-//!             mockdown().expect(|args| {
-//!                 assert_eq!(math::Add(1, 1), args);
+//!             mockdown().expect(math::Add( |x, y| {
+//!                 assert_eq!((1, 1), (x, y));
 //!                 2
-//!             });
+//!             }));
 //!
 //!             let z = super::one(1);
 //!             assert_eq!(z, 2);
