@@ -1,6 +1,4 @@
 use std::any::Any;
-use std::error::Error;
-use std::fmt::Debug;
 use std::sync::{Arc, LazyLock, Mutex};
 
 use crate::{Mock, Mockdown};
@@ -19,12 +17,16 @@ impl Mock for LazyLock<Arc<Mutex<Mockdown>>> {
         self
     }
 
-    fn expect<T: Any, U: Any>(&'static self, expect: fn(T) -> U) -> &'static Self {
-        self.lock().unwrap().add(expect);
+    fn expect<E: Any + Send>(&'static self, expect: E) -> &'static Self {
+        self.lock().unwrap().expect(expect);
         self
     }
 
-    fn mock<T: Any + Debug, U: Any>(&'static self, args: T) -> Result<U, Box<dyn Error>> {
-        self.lock().unwrap().mock(args)
+    fn next<E, R, W>(&'static self, with: W) -> Result<R, String>
+    where
+        E: Any + Send,
+        W: FnOnce(E) -> R,
+    {
+        self.lock().unwrap().next(with)
     }
 }

@@ -1,10 +1,9 @@
 // https://github.com/fmierlo/mockdown
 
-use std::any::{type_name, Any};
+use std::any::Any;
 use std::cell::RefCell;
 use std::default::Default;
-use std::error::Error;
-use std::fmt::Debug;
+use std::marker::Send;
 use std::thread::LocalKey;
 
 use expect::ExpectList;
@@ -19,8 +18,11 @@ pub fn mockdown() -> &'static LocalKey<RefCell<Mockdown>> {
 
 pub trait Mock {
     fn clear(&'static self) -> &'static Self;
-    fn expect<T: Any, U: Any>(&'static self, expect: fn(T) -> U) -> &'static Self;
-    fn mock<T: Any + Debug, U: Any>(&'static self, args: T) -> Result<U, Box<dyn Error>>;
+    fn expect<E: Any + Send>(&'static self, expect: E) -> &'static Self;
+    fn next<E, R, W>(&'static self, with: W) -> Result<R, String>
+    where
+        E: Any + Send,
+        W: FnOnce(E) -> R;
 }
 
 impl Mock for LocalKey<RefCell<Mockdown>> {
@@ -29,13 +31,17 @@ impl Mock for LocalKey<RefCell<Mockdown>> {
         self
     }
 
-    fn expect<T: Any, U: Any>(&'static self, expect: fn(T) -> U) -> &'static Self {
-        self.with_borrow_mut(|mock| mock.add(expect));
+    fn expect<E: Any + Send>(&'static self, expect: E) -> &'static Self {
+        self.with_borrow_mut(|mock| mock.expect(expect));
         self
     }
 
-    fn mock<T: Any + Debug, U: Any>(&'static self, args: T) -> Result<U, Box<dyn Error>> {
-        self.with_borrow_mut(|mock| mock.mock::<T, U>(args))
+    fn next<E, R, W>(&'static self, with: W) -> Result<R, String>
+    where
+        E: Any + Send,
+        W: FnOnce(E) -> R,
+    {
+        self.with_borrow_mut(|mock| mock.next(with))
     }
 }
 
@@ -49,59 +55,28 @@ impl Mockdown {
         self.expects.clear();
     }
 
-    pub fn add<T: Any, U: Any>(&mut self, expect: fn(T) -> U) {
+    pub fn expect<E: Any + Send>(&mut self, expect: E) {
         self.expects.add(expect);
     }
 
-    pub fn mock<T: Any + Debug, U: Any>(&mut self, args: T) -> Result<U, Box<dyn Error>> {
-        let expect = self.expects.next().ok_or_else(|| {
-            self.expects.clear();
-            Self::type_error::<T, U>("nothing")
-        })?;
-
-        let result = expect.mock(args).map_err(|expect| {
-            self.expects.clear();
-            Self::type_error::<T, U>(expect)
-        })?;
-
-        Ok(result)
-    }
-
-    fn type_error<T: Any + Debug, U: Any>(expect: &str) -> String {
-        let received = type_name::<fn(T) -> U>();
-        format!("Mockdown error, expect type mismatch: expecting {expect:?}, received {received:?}")
+    pub fn next<E, R, W>(&mut self, with: W) -> Result<R, String>
+    where
+        E: Any + Send,
+        W: FnOnce(E) -> R,
+    {
+        self.expects.next::<E>().map(with)
     }
 }
 
 pub mod expect {
     use std::any::Any;
+    use std::collections::VecDeque;
     use std::fmt::Debug;
+    use std::marker::Send;
 
-    pub trait IntoAny {
-        fn into_any(self) -> Box<dyn Any>;
-    }
-
-    impl<T: Any> IntoAny for T {
-        fn into_any(self) -> Box<dyn Any> {
-            Box::new(self)
-        }
-    }
-
-    pub trait IntoType {
-        fn into_type<T: Any>(self, expect: &dyn Expect) -> Result<T, &'static str>;
-    }
-
-    impl IntoType for Box<dyn Any> {
-        fn into_type<T: Any>(self, expect: &dyn Expect) -> Result<T, &'static str> {
-            self.downcast::<T>()
-                .map_err(|_| expect.type_name())
-                .map(|value| *value)
-        }
-    }
-
-    pub trait Expect: Send {
-        fn call(&self, when: Box<dyn Any>) -> Result<Box<dyn Any>, &'static str>;
+    pub trait Expect: 'static {
         fn type_name(&self) -> &'static str;
+        fn as_any(&mut self) -> Box<&mut dyn Any>;
     }
 
     impl Debug for dyn Expect {
@@ -111,26 +86,26 @@ pub mod expect {
     }
 
     impl dyn Expect {
-        pub fn mock<T: Any, U: Any>(&self, when: T) -> Result<U, &'static str> {
-            let then = self.call(when.into_any())?;
-            then.into_type(self)
+        pub fn downcast_mut<E: Any>(&mut self) -> Option<E> {
+            self.as_any()
+                .downcast_mut::<Option<E>>()
+                .and_then(|value| value.take())
         }
     }
 
-    impl<T: Any, U: Any> Expect for fn(T) -> U {
-        fn call(&self, when: Box<dyn Any>) -> Result<Box<dyn Any>, &'static str> {
-            let then = self(when.into_type(self)?);
-            Ok(then.into_any())
+    impl<E: Any> Expect for Option<E> {
+        fn type_name(&self) -> &'static str {
+            std::any::type_name::<E>()
         }
 
-        fn type_name(&self) -> &'static str {
-            std::any::type_name::<fn(T) -> U>()
+        fn as_any(&mut self) -> Box<&mut dyn Any> {
+            Box::new(self)
         }
     }
 
     #[derive(Debug, Default)]
     pub struct ExpectList {
-        list: Vec<Box<dyn Expect>>,
+        list: VecDeque<Box<dyn Expect>>,
     }
 
     impl ExpectList {
@@ -138,13 +113,25 @@ pub mod expect {
             self.list.clear();
         }
 
-        pub fn add<T: Any, U: Any>(&mut self, expect: fn(T) -> U) {
-            self.list.insert(0, Box::new(expect));
+        pub fn add<E: Any + Send>(&mut self, expect: E) {
+            self.list.push_back(Box::new(Some(expect)));
         }
 
         #[allow(clippy::should_implement_trait)]
-        pub fn next(&mut self) -> Option<Box<dyn Expect>> {
-            self.list.pop()
+        pub fn next<E: Any>(&mut self) -> Result<E, String> {
+            let mut expect = self.list.pop_front().ok_or_else(|| {
+                let received = std::any::type_name::<E>();
+                format!("Mockdown error, expect type mismatch: expecting nothing, received {received:?}")
+            })?;
+
+            expect.downcast_mut::<E>().ok_or_else(|| {
+                self.clear();
+                let expected = expect.type_name();
+                let received = std::any::type_name::<E>();
+                format!(
+                    "Mockdown error, expect type mismatch: expecting {expected:?}, received {received:?}"
+                )
+            })
         }
 
         pub fn is_empty(&self) -> bool {
