@@ -4,8 +4,6 @@ Mockdown is a single file and macro/dependency free mock library for Rust.
 
 # Example
 
-## Simple
-
 ```rust
 pub mod math {
     pub fn add(x: i32, y: i32) -> i32 {
